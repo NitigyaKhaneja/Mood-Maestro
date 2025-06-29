@@ -1,39 +1,24 @@
-//API KEYS 
-const SPOTIFY_CLIENT_ID = "";
-const SPOTIFY_CLIENT_SECRET = "";
-const OPENAI_API_KEY = "";
+const SPOTIFY_CLIENT_ID = ""; // ← Add your client ID
+const SPOTIFY_CLIENT_SECRET = ""; // ← Add your client secret
+const OPENAI_API_KEY = ""; // ← Optional
 
-// DOM ELEMENTS 
 const moodInput = document.getElementById("moodInput");
+const detectButton = document.getElementById("detectButton");
+const resultDiv = document.getElementById("result");
 const getPlaylistButton = document.getElementById("getPlaylistButton");
 const playlistOutput = document.getElementById("playlist-output");
 const moodOptionsDiv = document.getElementById("moodOptions");
-const chatbotResponse = document.getElementById("chatbot-response");
-const chatMoodInput = document.getElementById("chatMoodInput");
 const micButton = document.getElementById("micButton");
 
-// BACKGROUND BLOBS 
-const blobBg = document.getElementById("animated-bg");
-for (let i = 0; i < 3; i++) {
-  const blob = document.createElement("div");
-  blob.className = "blob";
-  blob.style.top = `${Math.random() * 80}%`;
-  blob.style.left = `${Math.random() * 80}%`;
-  blobBg.appendChild(blob);
-}
+const webcam = document.createElement("video");
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
+webcam.setAttribute("autoplay", true);
+webcam.setAttribute("playsinline", true);
+webcam.style.display = "none";
+document.body.appendChild(webcam);
+document.body.appendChild(canvas);
 
-//  SPEECH-TO-TEXT 
-micButton.onclick = () => {
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = 'en-US';
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    moodInput.value = transcript;
-  };
-  recognition.start();
-};
-
-//  MOOD OPTIONS 
 const MOODS = ["happy", "sad", "angry", "calm", "romantic", "party", "focus"];
 function moodEmoji(mood) {
   const emojis = {
@@ -42,6 +27,7 @@ function moodEmoji(mood) {
   };
   return emojis[mood] || "🎶";
 }
+
 function populateMoodOptions() {
   MOODS.forEach(mood => {
     const btn = document.createElement("span");
@@ -56,7 +42,18 @@ function populateMoodOptions() {
 }
 document.addEventListener("DOMContentLoaded", populateMoodOptions);
 
-//  SPOTIFY AUTH 
+// 🎤 Speech-to-text
+micButton.onclick = () => {
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  recognition.lang = 'en-US';
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    moodInput.value = transcript;
+  };
+  recognition.start();
+};
+
+// 🎵 Spotify Token
 async function getSpotifyToken() {
   const credentials = btoa(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`);
   const res = await fetch("https://accounts.spotify.com/api/token", {
@@ -71,7 +68,7 @@ async function getSpotifyToken() {
   return data.access_token;
 }
 
-// FETCH SPOTIFY PLAYLISTS 
+// 🎵 Fetch Playlist
 async function fetchPlaylists(mood, token) {
   const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(mood)}&type=playlist&limit=6`;
   const res = await fetch(url, {
@@ -81,7 +78,7 @@ async function fetchPlaylists(mood, token) {
   return data.playlists.items;
 }
 
-//  DISPLAY PLAYLIST CARDS 
+// 🎵 Display Playlist
 async function fetchAndDisplayPlaylists(mood) {
   playlistOutput.innerHTML = `<p class="text-purple-300 text-center col-span-3">Fetching playlists...</p>`;
   const token = await getSpotifyToken();
@@ -109,35 +106,63 @@ async function fetchAndDisplayPlaylists(mood) {
   });
 }
 
-//  ON BUTTON CLICK 
+// 📷 Detect Emotion via Webcam (15 frames)
+detectButton.onclick = async () => {
+  resultDiv.innerText = "Starting webcam...";
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  webcam.srcObject = stream;
+
+  let previous = "";
+  let count = 0;
+  let confirmed = "";
+
+  for (let i = 0; i < 15; i++) {
+    await new Promise(r => setTimeout(r, 300));
+
+    canvas.width = webcam.videoWidth;
+    canvas.height = webcam.videoHeight;
+    ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg"));
+    const formData = new FormData();
+    formData.append("frame", blob);
+
+    const res = await fetch("http://127.0.0.1:5000/detect-emotion", { method: "POST", body: formData });
+    const data = await res.json();
+
+    if (data.error) {
+      resultDiv.innerText = "Error detecting emotion.";
+      console.error(data.error);
+      return;
+    }
+
+    const emotion = data.emotion;
+    resultDiv.innerText = `Frame ${i + 1} → Detected: ${emotion}`;
+
+    if (emotion === previous) {
+      count++;
+    } else {
+      previous = emotion;
+      count = 1;
+    }
+
+    if (count >= 5) {
+      confirmed = emotion;
+      break;
+    }
+  }
+
+  stream.getTracks().forEach(track => track.stop());
+
+  if (!confirmed) confirmed = previous;
+  resultDiv.innerHTML = `🎭 Final Emotion: <strong>${confirmed}</strong>`;
+  moodInput.value = confirmed;
+  fetchAndDisplayPlaylists(confirmed);
+};
+
+// 🔘 Manual Mood Button
 getPlaylistButton.onclick = () => {
   const mood = moodInput.value.trim().toLowerCase();
   if (!mood) return alert("Please enter a mood!");
   fetchAndDisplayPlaylists(mood);
 };
-
-// GPT-POWERED CHATBOT 
-async function startTherapyFromInput() {
-  const mood = chatMoodInput.value.trim();
-  if (!mood) return alert("Type what you're feeling.");
-  chatbotResponse.innerHTML = "<p class='text-gray-400'>Typing...</p>";
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-3.5-turbo",
-      messages: [
-        { role: "system", content: "You're a compassionate therapy assistant." },
-        { role: "user", content: `I'm feeling ${mood}. Can we talk about it?` }
-      ]
-    })
-  });
-
-  const data = await response.json();
-  const reply = data.choices?.[0]?.message?.content || "Couldn't fetch a response.";
-  chatbotResponse.innerHTML = `<div class="bg-gray-800 p-4 rounded-xl text-sm text-purple-200">${reply}</div>`;
-}

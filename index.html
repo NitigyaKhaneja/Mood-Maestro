@@ -20,6 +20,20 @@
       <p class="text-gray-300 mt-3 text-lg sm:text-xl">Let your mood lead the music 🎧</p>
     </header>
 
+    <!-- 🎬 Start Emotion Detection -->
+    <div class="text-center my-8">
+      <button id="detectButton" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transition-all duration-300">
+        Start Emotion Detection
+      </button>
+      <div class="flex justify-center mt-4">
+      <video id="webcam" autoplay playsinline width="640" height="480" class="rounded-xl shadow-lg border-2 border-purple-600"></video>
+      <canvas id="canvas" width="640" height="480"></canvas>
+      </div>
+    </div>
+
+    
+
+    <!-- 🧠 Mood Input & Buttons -->
     <section class="w-full max-w-5xl bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl p-6 md:p-10 animate-slide-in-left">
       <div class="flex flex-col md:flex-row items-center gap-4 mb-6">
         <input id="moodInput" type="text" placeholder="e.g., Chill, Energetic, Angry..." class="flex-1 p-4 rounded-xl bg-gray-800 text-white placeholder-gray-400 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 text-lg">
@@ -32,20 +46,12 @@
 
       <div id="playlist-output" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </section>
+
+    <!-- 🎭 Emotion Result -->
+    <div class="text-center mt-6 text-xl text-purple-300" id="result"></div>
   </div>
 
-  <!-- 💬 Chatbot Section -->
-  <section id="chatbot" class="fixed bottom-0 left-0 right-0 bg-white/10 backdrop-blur-xl border-t border-white/20 shadow-2xl p-4 z-50">
-    <div class="max-w-4xl mx-auto chatbot-box" id="chatbot-content">
-      <h3 class="text-purple-300 text-lg mb-2">Feeling something? I'm here if you want to talk 💬</h3>
-      <div class="flex gap-3">
-        <input type="text" id="chatMoodInput" class="flex-1 p-2 rounded-lg bg-gray-800 text-white border border-gray-700" placeholder="Type a feeling...">
-        <button onclick="startTherapyFromInput()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl">Talk</button>
-      </div>
-      <div id="chatbot-response" class="mt-4 text-sm text-gray-200"></div>
-    </div>
-  </section>
-
+  <!-- 🧠 Script -->
   <script src="script.js"></script>
 </body>
 </html>
