@@ -1,6 +1,4 @@
-Absolutely, here is the clean plain-text version with no emojis, ready for copy-paste:
 
----
 
 Mood Maestro – Mood to Music Playlist Recommender
 
@@ -104,8 +102,3 @@ DeepFace supports multiple detection backends including OpenCV, SSD, Dlib, and M
    Yuval Gupta
    Nitigya Khaneja
    Datla Vinay Varma
-
----
-
-Let me know if you want this exported as a `.md` file or ready to upload to GitHub.
-# MoodMaestro
